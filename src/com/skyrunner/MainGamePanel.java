@@ -9,6 +9,7 @@ import android.hardware.SensorManager;
 import android.util.Log;
 import android.view.*;
 import com.example.R;
+import com.skyrunner.core.Game;
 
 import java.util.*;
 
@@ -24,8 +25,6 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
     private MainThread thread;
     private static final String TAG = MainGamePanel.class.getSimpleName();
 
-    PlayerCharacter character;
-
     Bitmap obstacleBitmap;
 
     private List<StaticObstacle> obstacles = new ArrayList<StaticObstacle>();
@@ -36,25 +35,27 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
     private long obstacleCreationTimer;
     private long cleaningTimer;
 
+    private final Game game;
+
     public MainGamePanel(Context context) {
         super(context);
         getHolder().addCallback(this);
-
-        thread = new MainThread(getHolder(), this);
-
-        setFocusable(true);
 
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
         screenWidth = display.getWidth();
         screenHeight = display.getHeight();
 
+        game = new Game(screenWidth, screenHeight, this);
+
+        thread = new MainThread(getHolder(), this);
+
+        setFocusable(true);
+
         GlobalState globalState = GlobalState.getInstance();
         globalState.setScreenHeight(screenHeight);
         globalState.setScreenWidth(screenWidth);
 
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.character);
-        character = new PlayerCharacter(bitmap, (screenWidth - bitmap.getWidth())/2, (int) ((screenHeight - bitmap.getHeight())/5));
         obstacleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.obstacle);
 
         SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -101,6 +102,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     protected void onDraw(Canvas canvas) {
+        PlayerCharacter character = game.getCharacter();
         Bitmap bitmap = character.getBitmap();
         Matrix matrix = new Matrix();
         matrix.setRotate(character.getAngle(), bitmap.getWidth()/2, bitmap.getHeight()/4);
@@ -121,7 +123,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
         for (StaticObstacle obstacle: obstacles){
 
             obstacle.process(delta);
-            detectCollision(obstacle, character);
+            detectCollision(obstacle, game.getCharacter());
 
         }
 
@@ -190,7 +192,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
 
             float angle = calculateAngle(x);
             GlobalState.getInstance().setDx(60 * angle / 90);
-            character.setAngle(angle);
+            game.getCharacter().setAngle(angle);
         }
 
         private float calculateAngle(float x) {
