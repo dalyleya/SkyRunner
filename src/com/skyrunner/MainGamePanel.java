@@ -25,16 +25,8 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
     private MainThread thread;
     private static final String TAG = MainGamePanel.class.getSimpleName();
 
-    Bitmap obstacleBitmap;
-
-    private List<StaticObstacle> obstacles = new ArrayList<StaticObstacle>();
-
     private float screenHeight;
     private final int screenWidth;
-    private int hits;
-    private long obstacleCreationTimer;
-    private long cleaningTimer;
-
     private final Game game;
 
     public MainGamePanel(Context context) {
@@ -56,7 +48,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
         globalState.setScreenHeight(screenHeight);
         globalState.setScreenWidth(screenWidth);
 
-        obstacleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.obstacle);
+
 
         SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         Sensor accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -115,71 +107,16 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
         paint.setColor(Color.WHITE);
         paint.setStyle(Paint.Style.FILL);
         paint.setTextSize(20);
-        canvas.drawText(String.format("Hits: %d", hits), 10, 25, paint);
+        canvas.drawText(String.format("Hits: %d", game.getHits()), 10, 25, paint);
         super.onDraw(canvas);
     }
 
     public void process(long delta) {
-        for (StaticObstacle obstacle: obstacles){
-
-            obstacle.process(delta);
-            detectCollision(obstacle, game.getCharacter());
-
-        }
-
-        Random random = new Random();
-
-        obstacleCreationTimer += delta;
-
-        if (obstacleCreationTimer > 50){
-            if (random.nextInt(50) == 0){
-                obstacles.add(new StaticObstacle(obstacleBitmap, random.nextInt(screenWidth + 1000) - 500, screenHeight));
-            }
-            obstacleCreationTimer -= 50; //No, we can't use tricky mathematics everywhere :(
-        }
-
-        cleaningTimer += delta;
-
-        if (cleaningTimer > 1000){
-            cleaningTimer -= 1000;
-            Iterator iterator =  obstacles.iterator();
-            while (iterator.hasNext()) {
-                StaticObstacle obstacle = (StaticObstacle)iterator.next();
-                if ( obstacle.getY() <= -obstacle.getScaledBitmap().getHeight() ){
-                    iterator.remove();
-                }
-
-            }
-
-        }
-    }
-
-    private void detectCollision(StaticObstacle obstacle, PlayerCharacter character) {
-        if (obstacle.isCollided()) return;
-
-        float obstacleLeft = obstacle.getX();
-        float obstacleRight = obstacleLeft + obstacle.getScaledBitmap().getWidth();
-        float obstacleTop = obstacle.getY();
-        float obstacleBottom = obstacleTop + obstacle.getScaledBitmap().getHeight();
-
-        float characterLeft = character.getX();
-        float characterRight = characterLeft + character.getBitmap().getWidth();
-        float characterTop = character.getY();
-        float characterBottom = characterTop + character.getBitmap().getHeight();
-
-        if (obstacleLeft > characterRight) return;
-        if (obstacleRight < characterLeft) return;
-        if (obstacleTop > characterBottom) return;
-        if (obstacleBottom < characterTop) return;
-
-        obstacle.setCollided(true);
-        Log.d(TAG, "Collided");
-
-        hits++;
+        game.process(delta);
     }
 
     public void drawObstacles(Canvas canvas){
-        for (StaticObstacle obstacle: obstacles){
+        for (StaticObstacle obstacle: game.getObstacles()){
             canvas.drawBitmap(obstacle.getScaledBitmap(), obstacle.getX(), obstacle.getY(), null);
         }
     }
