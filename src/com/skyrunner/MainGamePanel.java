@@ -9,6 +9,7 @@ import android.hardware.SensorManager;
 import android.util.Log;
 import android.view.*;
 import com.example.R;
+import com.skyrunner.core.Game;
 
 import java.util.*;
 
@@ -24,38 +25,30 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
     private MainThread thread;
     private static final String TAG = MainGamePanel.class.getSimpleName();
 
-    PlayerCharacter character;
-
-    Bitmap obstacleBitmap;
-
-    private List<StaticObstacle> obstacles = new ArrayList<StaticObstacle>();
-
     private float screenHeight;
     private final int screenWidth;
-    private int hits;
-    private long obstacleCreationTimer;
-    private long cleaningTimer;
+    private final Game game;
 
     public MainGamePanel(Context context) {
         super(context);
         getHolder().addCallback(this);
-
-        thread = new MainThread(getHolder(), this);
-
-        setFocusable(true);
 
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
         screenWidth = display.getWidth();
         screenHeight = display.getHeight();
 
+        game = new Game(screenWidth, screenHeight, this);
+
+        thread = new MainThread(getHolder(), this);
+
+        setFocusable(true);
+
         GlobalState globalState = GlobalState.getInstance();
         globalState.setScreenHeight(screenHeight);
         globalState.setScreenWidth(screenWidth);
 
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.character);
-        character = new PlayerCharacter(bitmap, (screenWidth - bitmap.getWidth())/2, (int) ((screenHeight - bitmap.getHeight())/5));
-        obstacleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.obstacle);
+
 
         SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         Sensor accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -101,6 +94,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     protected void onDraw(Canvas canvas) {
+        PlayerCharacter character = game.getCharacter();
         Bitmap bitmap = character.getBitmap();
         Matrix matrix = new Matrix();
         matrix.setRotate(character.getAngle(), bitmap.getWidth()/2, bitmap.getHeight()/4);
@@ -113,71 +107,16 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
         paint.setColor(Color.WHITE);
         paint.setStyle(Paint.Style.FILL);
         paint.setTextSize(20);
-        canvas.drawText(String.format("Hits: %d", hits), 10, 25, paint);
+        canvas.drawText(String.format("Hits: %d", game.getHits()), 10, 25, paint);
         super.onDraw(canvas);
     }
 
     public void process(long delta) {
-        for (StaticObstacle obstacle: obstacles){
-
-            obstacle.process(delta);
-            detectCollision(obstacle, character);
-
-        }
-
-        Random random = new Random();
-
-        obstacleCreationTimer += delta;
-
-        if (obstacleCreationTimer > 50){
-            if (random.nextInt(50) == 0){
-                obstacles.add(new StaticObstacle(obstacleBitmap, random.nextInt(screenWidth + 1000) - 500, screenHeight));
-            }
-            obstacleCreationTimer -= 50; //No, we can't use tricky mathematics everywhere :(
-        }
-
-        cleaningTimer += delta;
-
-        if (cleaningTimer > 1000){
-            cleaningTimer -= 1000;
-            Iterator iterator =  obstacles.iterator();
-            while (iterator.hasNext()) {
-                StaticObstacle obstacle = (StaticObstacle)iterator.next();
-                if ( obstacle.getY() <= -obstacle.getScaledBitmap().getHeight() ){
-                    iterator.remove();
-                }
-
-            }
-
-        }
-    }
-
-    private void detectCollision(StaticObstacle obstacle, PlayerCharacter character) {
-        if (obstacle.isCollided()) return;
-
-        float obstacleLeft = obstacle.getX();
-        float obstacleRight = obstacleLeft + obstacle.getScaledBitmap().getWidth();
-        float obstacleTop = obstacle.getY();
-        float obstacleBottom = obstacleTop + obstacle.getScaledBitmap().getHeight();
-
-        float characterLeft = character.getX();
-        float characterRight = characterLeft + character.getBitmap().getWidth();
-        float characterTop = character.getY();
-        float characterBottom = characterTop + character.getBitmap().getHeight();
-
-        if (obstacleLeft > characterRight) return;
-        if (obstacleRight < characterLeft) return;
-        if (obstacleTop > characterBottom) return;
-        if (obstacleBottom < characterTop) return;
-
-        obstacle.setCollided(true);
-        Log.d(TAG, "Collided");
-
-        hits++;
+        game.process(delta);
     }
 
     public void drawObstacles(Canvas canvas){
-        for (StaticObstacle obstacle: obstacles){
+        for (StaticObstacle obstacle: game.getObstacles()){
             canvas.drawBitmap(obstacle.getScaledBitmap(), obstacle.getX(), obstacle.getY(), null);
         }
     }
@@ -190,7 +129,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
 
             float angle = calculateAngle(x);
             GlobalState.getInstance().setDx(60 * angle / 90);
-            character.setAngle(angle);
+            game.getCharacter().setAngle(angle);
         }
 
         private float calculateAngle(float x) {

@@ -13,11 +13,11 @@ import com.example.R;
  */
 public class PlayerCharacter {
     private Bitmap bitmap;
-    private int x, y;
+    private float x, y;
 
     private float angle;
 
-    public PlayerCharacter(Bitmap bitmap, int x, int y) {
+    public PlayerCharacter(Bitmap bitmap, float x, float y) {
         this.bitmap = bitmap;
         this.x = x;
         this.y = y;
@@ -31,19 +31,19 @@ public class PlayerCharacter {
         this.bitmap = bitmap;
     }
 
-    public int getX() {
+    public float getX() {
         return x;
     }
 
-    public void setX(int x) {
+    public void setX(float x) {
         this.x = x;
     }
 
-    public int getY() {
+    public float getY() {
         return y;
     }
 
-    public void setY(int y) {
+    public void setY(float y) {
         this.y = y;
     }
 
