@@ -22,7 +22,7 @@ public class StaticObstacle {
     private Bitmap originalBitmap;
     private Bitmap scaledBitmap;
     private float x, y;
-    private float speed = 20.0f;
+    private float speed = 50.0f;
     private boolean collided = false;
 
     public StaticObstacle(Bitmap originalBitmap, float x, float y) {

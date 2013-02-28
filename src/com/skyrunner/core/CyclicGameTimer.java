@@ -21,9 +21,13 @@ public class CyclicGameTimer {
     public void process(long delta){
         timeDelta += delta;
 
-        if (timeDelta < neededTime){
+        if (timeDelta > neededTime){
             timeDelta -= neededTime;
             runnable.run();
         }
+    }
+
+    public void reset(){
+        timeDelta = 0;
     }
 }

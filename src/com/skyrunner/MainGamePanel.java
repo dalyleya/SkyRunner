@@ -108,6 +108,7 @@ public class MainGamePanel extends SurfaceView implements SurfaceHolder.Callback
         paint.setStyle(Paint.Style.FILL);
         paint.setTextSize(20);
         canvas.drawText(String.format("Hits: %d", game.getHits()), 10, 25, paint);
+        canvas.drawText(String.format("Distance: %f.2", game.getDistance()), screenWidth - 175, 25, paint);
         super.onDraw(canvas);
     }
 

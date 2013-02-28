@@ -29,6 +29,9 @@ public class Game {
     private Bitmap obstacleBitmap;
 
     private int hits;
+    private float distance = 5000;
+    private float velocity = 60;
+    private boolean run = true;
 
     public Game(float screenWidth, float screenHeight, View view) {
         this.screenWidth = screenWidth;
@@ -48,6 +51,13 @@ public class Game {
     }
 
     public void process(long delta){
+        if (!run) return;
+
+        distance -= velocity * delta / 1000;
+
+        if (distance <= 0f) {
+            run = false;
+        }
 
         for (StaticObstacle obstacle: obstacles){
             obstacle.process(delta);
@@ -100,12 +110,16 @@ public class Game {
         return hits;
     }
 
+    public float getDistance() {
+        return distance >= 0f ? distance : 0f;
+    }
+
     private class ObstacleGenerator implements Runnable {
         private Random random = new Random();
 
         @Override
         public void run() {
-            if (random.nextInt(50) == 0){
+            if (random.nextInt(10) == 0){
                 obstacles.add(new StaticObstacle(obstacleBitmap, random.nextInt((int)screenWidth + 1000) - 500, screenHeight));
             }
         }
